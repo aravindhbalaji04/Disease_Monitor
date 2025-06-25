@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Register Disease - Disease Monitoring Portal{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-plus-circle me-2"></i>Register New Disease Entry
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-muted mb-4">
+                        Fill out the form below to register a new disease case. The system will automatically 
+                        geocode the address and generate risk predictions for surrounding areas.
+                    </p>
+                    
+                    <form method="POST" id="diseaseForm">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.disease_name.label(class="form-label") }}
+                                {{ form.disease_name(class="form-select") }}
+                                {% if form.disease_name.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.disease_name.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                {{ form.patient_age.label(class="form-label") }}
+                                {{ form.patient_age(class="form-control", placeholder="Enter age") }}
+                                {% if form.patient_age.errors %}
+                                    <div class="text-danger">
+                                        {% for error in form.patient_age.errors %}
+                                            <small>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.occurrence_date.label(class="form-label") }}
+                            {{ form.occurrence_date(class="form-control") }}
+                            {% if form.occurrence_date.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.occurrence_date.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.address.label(class="form-label") }}
+                            {{ form.address(class="form-control", rows="3", placeholder="Enter complete address including city, state") }}
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Please provide a complete address for accurate location mapping.
+                            </div>
+                            {% if form.address.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.address.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-4">
+                            {{ form.additional_info.label(class="form-label") }}
+                            {{ form.additional_info(class="form-control", rows="3", placeholder="Any additional information about the case (optional)") }}
+                            <div class="form-text">
+                                Include symptoms, travel history, contact information, or other relevant details.
+                            </div>
+                            {% if form.additional_info.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.additional_info.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                                <i class="fas fa-save me-2"></i>Register Disease Entry
+                            </button>
+                            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Information Panel -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-info-circle me-2"></i>What happens after registration?
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center p-3">
+                                <i class="fas fa-map-marked-alt fa-2x text-primary mb-2"></i>
+                                <h6>Location Mapping</h6>
+                                <small class="text-muted">Address is geocoded and mapped</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center p-3">
+                                <i class="fas fa-brain fa-2x text-primary mb-2"></i>
+                                <h6>AI Prediction</h6>
+                                <small class="text-muted">Risk areas are predicted using ML</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center p-3">
+                                <i class="fas fa-bell fa-2x text-primary mb-2"></i>
+                                <h6>Alert Generation</h6>
+                                <small class="text-muted">Authorities are notified of high-risk zones</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('diseaseForm').addEventListener('submit', function(e) {
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+    submitBtn.disabled = true;
+});
+
+// Set default date to current date and time
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.querySelector('input[type="datetime-local"]');
+    if (dateInput && !dateInput.value) {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        dateInput.value = now.toISOString().slice(0, 16);
+    }
+});
+</script>
+{% endblock %}

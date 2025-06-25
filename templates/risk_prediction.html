@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Risk Prediction - Disease Monitoring Portal{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Case Information -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Risk Prediction for {{ entry.disease_name.title().replace('_', ' ') }} Case
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h6><i class="fas fa-map-marker-alt me-2"></i>Location</h6>
+                            <p class="text-muted mb-3">{{ entry.address }}</p>
+                            
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <strong>Disease:</strong> {{ entry.disease_name.title().replace('_', ' ') }}
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Patient Age:</strong> {{ entry.patient_age|int }} years
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Date:</strong> {{ entry.occurrence_date.strftime('%Y-%m-%d') }}
+                                </div>
+                            </div>
+                            
+                            {% if entry.additional_info %}
+                            <div class="mt-3">
+                                <strong>Additional Information:</strong>
+                                <p class="text-muted">{{ entry.additional_info }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="alert alert-danger">
+                                <h5 class="mb-0">Risk Index</h5>
+                                <h2 class="mb-0">{{ (entry.risk_index * 100)|round|int }}%</h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Risk Areas Summary -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>Predicted Risk Areas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for area in risk_areas %}
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-body text-center">
+                                    <div class="risk-indicator risk-{{ area.risk_level.lower().replace(' ', '-') }} d-inline-block mb-2" 
+                                         style="width: 20px; height: 20px; border-radius: 50%;"></div>
+                                    <h6>{{ area.risk_level }}</h6>
+                                    <p class="text-muted mb-1">Risk Score: {{ "%.2f"|format(area.risk_score) }}</p>
+                                    <small class="text-muted">Radius: {{ area.radius }}m</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Interactive Risk Map -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-map me-2"></i>Interactive Risk Map
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="map-container">
+                        {{ risk_map|safe }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recommendations -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>Recommended Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-users me-2"></i>For Disease Control Teams:</h6>
+                        <ul class="mb-0">
+                            <li>Deploy surveillance teams to high-risk areas (red zones)</li>
+                            <li>Conduct door-to-door screening within 500m radius</li>
+                            <li>Implement preventive measures based on disease type</li>
+                            <li>Set up temporary health camps if needed</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-home me-2"></i>For Residents in Risk Areas:</h6>
+                        <ul class="mb-0">
+                            {% if entry.disease_name in ['dengue', 'malaria', 'chikungunya'] %}
+                            <li>Remove standing water from containers, coolers, and plant pots</li>
+                            <li>Use mosquito nets and repellents</li>
+                            <li>Wear long-sleeved clothing during dawn and dusk</li>
+                            {% elif entry.disease_name == 'covid19' %}
+                            <li>Maintain social distancing and wear masks</li>
+                            <li>Practice frequent hand washing</li>
+                            <li>Avoid crowded places</li>
+                            {% else %}
+                            <li>Maintain good personal hygiene</li>
+                            <li>Drink only boiled or bottled water</li>
+                            <li>Eat properly cooked food</li>
+                            {% endif %}
+                            <li>Report symptoms immediately to health authorities</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-phone me-2"></i>Emergency Contacts
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Health Department:</strong><br>
+                        <a href="tel:108" class="text-decoration-none">108 (Emergency)</a>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Disease Control Cell:</strong><br>
+                        <a href="tel:+911234567890" class="text-decoration-none">+91 12345 67890</a>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Local Health Center:</strong><br>
+                        <a href="tel:+911234567891" class="text-decoration-none">+91 12345 67891</a>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-grid">
+                        <button class="btn btn-danger btn-sm mb-2" onclick="generateAlert()">
+                            <i class="fas fa-bell me-1"></i>Send Alert
+                        </button>
+                        <button class="btn btn-info btn-sm" onclick="exportReport()">
+                            <i class="fas fa-download me-1"></i>Export Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="text-center">
+        <a href="{{ url_for('register_disease') }}" class="btn btn-primary me-2">
+            <i class="fas fa-plus-circle me-2"></i>Register Another Case
+        </a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary me-2">
+            <i class="fas fa-chart-bar me-2"></i>View Dashboard
+        </a>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-home me-2"></i>Back to Home
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function generateAlert() {
+    if (confirm('Send immediate alert to disease control authorities?')) {
+        // In a real application, this would send notifications
+        alert('Alert sent successfully to disease control teams!');
+    }
+}
+
+function exportReport() {
+    // In a real application, this would generate a PDF report
+    alert('Generating risk assessment report...');
+}
+
+// Add some interactivity to risk areas
+document.addEventListener('DOMContentLoaded', function() {
+    const riskCards = document.querySelectorAll('.card');
+    riskCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+</script>
+{% endblock %}

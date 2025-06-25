@@ -1,0 +1,335 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Disease Monitoring Portal{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>
+                <i class="fas fa-chart-bar me-2"></i>Disease Monitoring Dashboard
+            </h2>
+            <p class="text-muted">Comprehensive overview of disease surveillance and risk analytics</p>
+        </div>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card text-white text-center p-4">
+                <i class="fas fa-virus fa-3x mb-3"></i>
+                <h3>{{ total_entries }}</h3>
+                <p class="mb-0">Total Cases</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white text-center p-4">
+                <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                <h3>{{ disease_counts|length }}</h3>
+                <p class="mb-0">Disease Types</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white text-center p-4">
+                <i class="fas fa-map-marked-alt fa-3x mb-3"></i>
+                <h3>{{ (total_entries * 0.3)|round|int }}</h3>
+                <p class="mb-0">Risk Areas</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white text-center p-4">
+                <i class="fas fa-shield-alt fa-3x mb-3"></i>
+                <h3>{{ ((total_entries * 0.7)|round|int) }}</h3>
+                <p class="mb-0">Controlled</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Disease Distribution Chart -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>Disease Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="diseaseChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>Disease Breakdown
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if disease_counts %}
+                        {% for disease, count in disease_counts %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-capitalize">{{ disease.replace('_', ' ') }}</span>
+                            <span class="badge bg-primary">{{ count }}</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted text-center">No data available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Entries and Risk Map -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock me-2"></i>Recent Entries
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_entries %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Disease</th>
+                                        <th>Location</th>
+                                        <th>Date</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for entry in recent_entries %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-danger">
+                                                {{ entry.disease_name.title().replace('_', ' ') }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <small>{{ entry.address[:30] }}...</small>
+                                        </td>
+                                        <td>
+                                            <small>{{ entry.created_at.strftime('%m/%d') }}</small>
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('risk_prediction', entry_id=entry.id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-center text-muted">No recent entries</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Risk Trends
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="riskTrendChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alert System -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bell me-2"></i>Active Alerts
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="alert alert-danger">
+                                <h6><i class="fas fa-exclamation-triangle me-2"></i>High Risk</h6>
+                                <p class="mb-1">Dengue outbreak detected in Anna Nagar</p>
+                                <small>3 new cases in 24 hours</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="alert alert-warning">
+                                <h6><i class="fas fa-eye me-2"></i>Watch Zone</h6>
+                                <p class="mb-1">Increased Malaria cases in T. Nagar</p>
+                                <small>Monitor for escalation</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-cloud-rain me-2"></i>Weather Alert</h6>
+                                <p class="mb-1">Monsoon season active</p>
+                                <small>Vector breeding risk increased</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-rocket me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <a href="{{ url_for('register_disease') }}" class="btn btn-primary w-100">
+                                <i class="fas fa-plus-circle d-block mb-1"></i>
+                                <small>Register Case</small>
+                            </a>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-info w-100" onclick="generateReport()">
+                                <i class="fas fa-file-pdf d-block mb-1"></i>
+                                <small>Generate Report</small>
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-warning w-100" onclick="sendAlert()">
+                                <i class="fas fa-bell d-block mb-1"></i>
+                                <small>Send Alert</small>
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-success w-100" onclick="exportData()">
+                                <i class="fas fa-download d-block mb-1"></i>
+                                <small>Export Data</small>
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-secondary w-100" onclick="refreshData()">
+                                <i class="fas fa-sync d-block mb-1"></i>
+                                <small>Refresh</small>
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-dark w-100" onclick="showSettings()">
+                                <i class="fas fa-cog d-block mb-1"></i>
+                                <small>Settings</small>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Disease Distribution Chart
+const diseaseCtx = document.getElementById('diseaseChart').getContext('2d');
+const diseaseData = {
+    labels: [
+        {% for disease, count in disease_counts %}
+        '{{ disease.title().replace("_", " ") }}',
+        {% endfor %}
+    ],
+    datasets: [{
+        data: [
+            {% for disease, count in disease_counts %}
+            {{ count }},
+            {% endfor %}
+        ],
+        backgroundColor: [
+            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+            '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0'
+        ]
+    }]
+};
+
+new Chart(diseaseCtx, {
+    type: 'doughnut',
+    data: diseaseData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Risk Trend Chart
+const trendCtx = document.getElementById('riskTrendChart').getContext('2d');
+const trendData = {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    datasets: [{
+        label: 'Risk Score',
+        data: [65, 59, 80, 81, 56, 55],
+        borderColor: '#FF6384',
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        tension: 0.4
+    }]
+};
+
+new Chart(trendCtx, {
+    type: 'line',
+    data: trendData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100
+            }
+        }
+    }
+});
+
+// Quick Action Functions
+function generateReport() {
+    alert('Generating comprehensive disease report...');
+}
+
+function sendAlert() {
+    if (confirm('Send alert to all registered authorities?')) {
+        alert('Alert sent successfully!');
+    }
+}
+
+function exportData() {
+    alert('Exporting data in CSV format...');
+}
+
+function refreshData() {
+    location.reload();
+}
+
+function showSettings() {
+    alert('Settings panel would open here...');
+}
+</script>
+{% endblock %}

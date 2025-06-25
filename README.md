@@ -215,10 +215,6 @@ The system includes sample data generation with:
 - **Weather Integration**: Include meteorological data in predictions
 - **Population Data**: Real population density data integration
 
-## 📄 License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details.
-
 ## 🙏 Acknowledgments
 
 - **scikit-learn**: For machine learning algorithms

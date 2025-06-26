@@ -276,14 +276,14 @@ def create_app():
             
             return render_template('dashboard.html',
                                  total_entries=total_entries,
-                                 disease_counts=disease_counts,
+                                 disease_counts=disease_counts.items() if disease_counts else [],
                                  most_common=most_common,
                                  entries=entries[:10])  # Show recent 10 entries
         except Exception as e:
             flash(f'Error loading dashboard: {str(e)}', 'error')
             return render_template('dashboard.html',
                                  total_entries=0,
-                                 disease_counts={},
+                                 disease_counts=[],
                                  most_common='N/A',
                                  entries=[])
 

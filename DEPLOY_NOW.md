@@ -4,12 +4,11 @@
 - ✅ App tested and working locally
 - ✅ Supabase integration configured
 - ✅ Production environment variables set
-- ✅ render.yaml configuration created
 - ✅ All files committed to git
 - ✅ Requirements.txt up to date
 - ✅ Gunicorn ready for production
 
-## 🎯 **Quick Deploy Steps:**
+## 🎯 **Quick Deploy Steps (Web Service):**
 
 ### **1. Push to GitHub** (if not done yet)
 ```bash
@@ -19,12 +18,16 @@ git push origin main
 ### **2. Deploy on Render**
 1. Go to [render.com](https://render.com)
 2. Sign up/login with GitHub
-3. Click **"New"** → **"Blueprint"**
+3. Click **"New"** → **"Web Service"**
 4. Connect your GitHub repository
-5. Render will detect `render.yaml` automatically
+5. Configure:
+   - **Name**: `disease-monitoring-portal`
+   - **Environment**: `Python 3`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `gunicorn app:app`
 6. Add environment variables:
 
-```
+```env
 FLASK_ENV=production
 SECRET_KEY=Hwy+mkUB7Gn+DG5P4vAW+WsvLtdh4/G1AROBhGmQYesH5FBO/8YV7U+RRH6rPBEcuCx4ccv1AtjKCLNILijHuA==
 SUPABASE_URL=https://wpqgehbmjwesbelimcmt.supabase.co
@@ -34,7 +37,7 @@ SUPABASE_DATABASE_URL=postgresql://postgres:SmoothOperator%4004@db.wpqgehbmjwesb
 DATABASE_URL=postgresql://postgres:SmoothOperator%4004@db.wpqgehbmjwesbelimcmt.supabase.co:5432/postgres
 ```
 
-7. Click **"Apply"** to deploy
+7. Click **"Create Web Service"** to deploy
 
 ### **3. Test Your Live App**
 Once deployed, test these URLs:
@@ -45,7 +48,7 @@ Once deployed, test these URLs:
 
 ## 🎉 **You're Ready!**
 
-Your Disease Monitoring Portal is configured and ready for Render deployment with:
+Your Disease Monitoring Portal is configured and ready for Render web service deployment with:
 
 - ✅ **Flask Web Application** with AI-powered disease prediction
 - ✅ **Supabase Integration** for production database
@@ -56,6 +59,13 @@ Your Disease Monitoring Portal is configured and ready for Render deployment wit
 - ✅ **Responsive Design** for mobile and desktop
 - ✅ **Security Features** with input validation and CSRF protection
 
+## ✨ **Web Service Benefits:**
+- **Simpler Setup**: No YAML configuration needed
+- **Direct Control**: Full control over build and start commands  
+- **Easy Management**: Simple environment variable setup
+- **Better Debugging**: Clear build logs and error messages
+- **Auto-Deploy**: Automatic deployment on git push
+
 ## 📞 **Support**
 - Check `RENDER_DEPLOYMENT.md` for detailed instructions
 - Monitor build logs in Render dashboard
@@ -64,4 +74,4 @@ Your Disease Monitoring Portal is configured and ready for Render deployment wit
 **Your disease monitoring system is ready to help public health teams worldwide!** 🏥🌍
 
 ---
-*Total setup time: ~10 minutes | Free tier available*
+*Total setup time: ~5 minutes | Free tier available | Web Service deployment*

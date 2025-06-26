@@ -74,6 +74,23 @@ def create_app():
                                       validators=[InputRequired()],
                                       render_kw={'type': 'datetime-local'})
 
+    def normalize_entry_for_template(entry):
+        """Convert entry (dict or object) to template-compatible format"""
+        from datetime import datetime
+        
+        if isinstance(entry, dict):
+            # Supabase dictionary format
+            return type('Entry', (), {
+                'disease_name': entry.get('disease_type', entry.get('disease_name', 'unknown')),
+                'created_at': datetime.fromisoformat(entry['created_at'].replace('Z', '+00:00')) if entry.get('created_at') else datetime.now(),
+                'address': entry.get('address', 'Unknown location'),
+                'patient_age': entry.get('patient_age', 0),
+                'id': entry.get('id', 0)
+            })()
+        else:
+            # Already an object (SQLAlchemy model)
+            return entry
+
     @app.route('/')
     def index():
         """Home page with recent disease entries and risk map"""
@@ -84,7 +101,8 @@ def create_app():
             if supabase_manager:
                 try:
                     supabase_entries = supabase_manager.get_disease_entries(limit=10)
-                    recent_entries = supabase_entries
+                    # Convert Supabase dict format to object-like format for template consistency
+                    recent_entries = [normalize_entry_for_template(entry) for entry in supabase_entries]
                 except Exception as e:
                     logger.warning(f"Failed to get entries from Supabase: {e}")
             
@@ -281,7 +299,7 @@ def create_app():
                                  total_entries=total_entries,
                                  disease_counts=disease_counts.items() if disease_counts else [],
                                  most_common=most_common,
-                                 entries=entries[:10])  # Show recent 10 entries
+                                 recent_entries=[normalize_entry_for_template(entry) for entry in entries[:10]])  # Show recent 10 entries
         except Exception as e:
             flash(f'Error loading dashboard: {str(e)}', 'error')
             return render_template('dashboard.html',

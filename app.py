@@ -376,12 +376,8 @@ if __name__ == '__main__':
         
         # Generate sample data if in development and no data exists
         if app.config['DEBUG'] and DiseaseEntry.query.count() == 0:
-            from sample_data import generate_sample_data
-            sample_entries = generate_sample_data(20)
-            for entry_data in sample_entries:
-                entry = DiseaseEntry(**entry_data)
-                db.session.add(entry)
-            db.session.commit()
+            from sample_data import create_sample_data
+            create_sample_data()
             logger.info("Sample data generated")
     
     port = int(os.environ.get('PORT', 5000))

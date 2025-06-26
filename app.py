@@ -106,9 +106,13 @@ def create_app():
                 except Exception as e:
                     logger.warning(f"Failed to get entries from Supabase: {e}")
             
-            # Fallback to local database
-            if not recent_entries:
-                recent_entries = DiseaseEntry.query.order_by(DiseaseEntry.created_at.desc()).limit(10).all()
+            # Fallback to local database only if no Supabase
+            if not recent_entries and not supabase_manager:
+                try:
+                    recent_entries = DiseaseEntry.query.order_by(DiseaseEntry.created_at.desc()).limit(10).all()
+                except Exception as e:
+                    logger.warning(f"Failed to get local entries: {e}")
+                    recent_entries = []
                 
             return render_template('index.html', recent_entries=recent_entries)
         except Exception as e:
@@ -193,13 +197,23 @@ def create_app():
     def risk_prediction(entry_id):
         """Show risk prediction for a specific entry"""
         try:
-            # Try to get entry from local DB first
-            entry = DiseaseEntry.query.get(entry_id)
+            entry = None
             
-            if not entry and supabase_manager:
-                # Try to get from Supabase
-                entries = supabase_manager.get_disease_entries(limit=1000)
-                entry = next((e for e in entries if e.get('id') == entry_id), None)
+            # Try to get from Supabase first
+            if supabase_manager:
+                try:
+                    entries = supabase_manager.get_disease_entries(limit=1000)
+                    entry = next((e for e in entries if e.get('id') == entry_id), None)
+                    print(f"Found entry from Supabase: {entry is not None}")
+                except Exception as e:
+                    logger.warning(f"Failed to get entry from Supabase: {e}")
+            
+            # Fallback to local DB only if no Supabase connection
+            if not entry and not supabase_manager:
+                try:
+                    entry = DiseaseEntry.query.get(entry_id)
+                except Exception as e:
+                    logger.warning(f"Failed to get entry from local DB: {e}")
             
             if not entry:
                 flash('Disease entry not found.', 'error')
@@ -243,10 +257,14 @@ def create_app():
                 except Exception as e:
                     logger.warning(f"Failed to get entries from Supabase: {e}")
             
-            # Fallback to local database
-            if not entries:
-                entries = DiseaseEntry.query.all()
-                entries = [entry.to_dict() for entry in entries]
+            # Fallback to local database only if no Supabase
+            if not entries and not supabase_manager:
+                try:
+                    entries = DiseaseEntry.query.all()
+                    entries = [entry.to_dict() for entry in entries]
+                except Exception as e:
+                    logger.warning(f"Failed to get local entries for API: {e}")
+                    entries = []
             
             return jsonify(entries)
         except Exception as e:
@@ -275,9 +293,13 @@ def create_app():
                 except Exception as e:
                     logger.warning(f"Failed to get ML data from Supabase: {e}")
             
-            if not entries:
-                entries = DiseaseEntry.query.all()
-                entries = [entry.to_dict() for entry in entries]
+            if not entries and not supabase_manager:
+                try:
+                    entries = DiseaseEntry.query.all()
+                    entries = [entry.to_dict() for entry in entries]
+                except Exception as e:
+                    logger.warning(f"Failed to get local entries for dashboard: {e}")
+                    entries = []
             
             # Calculate statistics
             total_entries = len(entries)
@@ -395,11 +417,15 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
         
-        # Generate sample data if in development and no data exists
-        if app.config['DEBUG'] and DiseaseEntry.query.count() == 0:
-            from sample_data import create_sample_data
-            create_sample_data()
-            logger.info("Sample data generated")
+        # Generate sample data if in development and no data exists (local dev only)
+        if app.config['DEBUG']:
+            try:
+                if DiseaseEntry.query.count() == 0:
+                    from sample_data import create_sample_data
+                    create_sample_data()
+                    logger.info("Sample data generated")
+            except Exception as e:
+                logger.info("No local database available for sample data (using Supabase)")
     
     port = int(os.environ.get('PORT', 5000))
     debug = app.config['DEBUG']

@@ -38,7 +38,18 @@ git push -u origin main
    - **Region**: Choose closest to your users
    - **Branch**: `main`
    - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `gunicorn app:app`
+   - **Start Command**: `gunicorn app:app --bind 0.0.0.0:$PORT`
+
+### 🚨 **CRITICAL: Fix Start Command Issue**
+
+**If Render auto-detects the wrong start command** (like `gunicorn your_application.wsgi`):
+
+1. **Clear the auto-detected command** in the Start Command field
+2. **Manually enter**: `gunicorn app:app --bind 0.0.0.0:$PORT`
+3. **Alternative**: Use `./start.sh` (backup script included)
+4. **Save** the service configuration
+
+**This is the most common deployment issue!** Render sometimes auto-detects Django-style commands instead of Flask.
 5. **Environment Variables**: Add all variables (see Step 3)
 6. **Create Web Service**: Click to deploy
 

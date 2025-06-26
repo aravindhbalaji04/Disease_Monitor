@@ -24,12 +24,7 @@ git push origin main
    - **Name**: `disease-monitoring-portal`
    - **Environment**: `Python 3`
    - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `gunicorn app:app --bind 0.0.0.0:$PORT`
-
-### 🚨 **CRITICAL FIX**: If Render shows wrong start command:
-1. **Clear** auto-detected command
-2. **Enter manually**: `gunicorn app:app --bind 0.0.0.0:$PORT`
-3. **Save** settings
+   - **Start Command**: `gunicorn app:app`
 6. Add environment variables:
 
 ```env

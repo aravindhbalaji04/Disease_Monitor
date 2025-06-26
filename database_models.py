@@ -43,6 +43,7 @@ class DiseaseEntry(db.Model):
         return {
             'id': self.id,
             'disease_name': self.disease_name,
+            'disease_type': self.disease_name,  # For compatibility with Supabase
             'patient_age': self.patient_age,
             'address': self.address,
             'latitude': self.latitude,

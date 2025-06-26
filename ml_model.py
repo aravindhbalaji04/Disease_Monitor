@@ -108,32 +108,58 @@ class DiseaseRiskPredictor:
         
         return risk_score
     
-    def train_model(self):
+    def train_model(self, supabase_manager=None):
         """
         Train the risk prediction model using historical disease data
         """
         try:
-            # Import here to avoid circular imports
-            from database_models import DiseaseEntry, db
+            # Get data priority: Supabase first, then local DB
+            entries = []
             
-            # Get historical data
-            entries = DiseaseEntry.query.all()
+            if supabase_manager:
+                try:
+                    entries = supabase_manager.get_entries_for_ml()
+                    print(f"Retrieved {len(entries)} entries from Supabase")
+                except Exception as e:
+                    print(f"Failed to get data from Supabase: {e}")
+            
+            # Fallback to local DB if no Supabase data
+            if not entries:
+                try:
+                    from database_models import DiseaseEntry
+                    local_entries = DiseaseEntry.query.all()
+                    entries = [entry.to_dict() for entry in local_entries]
+                    print(f"Retrieved {len(entries)} entries from local DB")
+                except Exception as e:
+                    print(f"Failed to get data from local DB: {e}")
             
             if len(entries) < 10:
-                print("Insufficient data for training. Need at least 10 entries.")
-                return False
+                print("Insufficient data for training. Using sample data for demo.")
+                # Create sample data for demo purposes
+                sample_data = self._generate_sample_data()
+                entries.extend(sample_data)
             
             # Convert to DataFrame
             data = []
             for entry in entries:
-                data.append({
-                    'latitude': entry.latitude,
-                    'longitude': entry.longitude,
-                    'patient_age': entry.patient_age,
-                    'disease_name': entry.disease_name,
-                    'occurrence_date': entry.occurrence_date,
-                    'risk_index': entry.risk_index
-                })
+                # Handle both dictionary and object formats
+                if isinstance(entry, dict):
+                    data.append({
+                        'latitude': entry.get('latitude'),
+                        'longitude': entry.get('longitude'),
+                        'disease_type': entry.get('disease_type', entry.get('disease_name', 'unknown')),
+                        'severity': entry.get('severity', 'medium'),
+                        'created_at': entry.get('created_at')
+                    })
+                else:
+                    # SQLAlchemy object format
+                    data.append({
+                        'latitude': entry.latitude,
+                        'longitude': entry.longitude,
+                        'disease_type': entry.disease_name,
+                        'severity': getattr(entry, 'severity', 'medium'),
+                        'created_at': entry.occurrence_date
+                    })
             
             df = pd.DataFrame(data)
             
@@ -257,6 +283,39 @@ class DiseaseRiskPredictor:
             })
         
         return risk_areas
+    
+    def _generate_sample_data(self):
+        """Generate sample data for demo purposes when no real data is available"""
+        import random
+        from datetime import datetime, timedelta
+        
+        diseases = ['dengue', 'malaria', 'chikungunya', 'zika', 'tuberculosis']
+        severities = ['low', 'medium', 'high']
+        
+        sample_data = []
+        for i in range(20):
+            # Generate random coordinates around major cities
+            base_coords = [
+                (12.9716, 77.5946),  # Bangalore
+                (19.0760, 72.8777),  # Mumbai
+                (28.7041, 77.1025),  # Delhi
+                (22.5726, 88.3639),  # Kolkata
+                (13.0827, 80.2707),  # Chennai
+            ]
+            
+            base_lat, base_lng = random.choice(base_coords)
+            lat = base_lat + random.uniform(-0.5, 0.5)
+            lng = base_lng + random.uniform(-0.5, 0.5)
+            
+            sample_data.append({
+                'latitude': lat,
+                'longitude': lng,
+                'disease_type': random.choice(diseases),
+                'severity': random.choice(severities),
+                'created_at': (datetime.now() - timedelta(days=random.randint(1, 365))).isoformat()
+            })
+        
+        return sample_data
     
     def save_model(self):
         """Save the trained model to disk"""

@@ -188,13 +188,16 @@ def create_app():
                 return redirect(url_for('index'))
             
             # Train/update the model with latest data
-            risk_predictor.train_model()
+            risk_predictor.train_model(supabase_manager)
             
             # Generate risk predictions
             if hasattr(entry, 'latitude'):
+                # SQLAlchemy object
                 lat, lng, disease = entry.latitude, entry.longitude, entry.disease_name
             else:
-                lat, lng, disease = entry['latitude'], entry['longitude'], entry['disease_type']
+                # Dictionary from Supabase
+                lat, lng = entry['latitude'], entry['longitude']
+                disease = entry.get('disease_type', entry.get('disease_name', 'Unknown'))
             
             risk_areas = risk_predictor.predict_risk_areas(lat, lng, disease)
             
@@ -235,7 +238,7 @@ def create_app():
     def api_risk_map(lat, lng, disease):
         """API endpoint to get risk map data"""
         try:
-            risk_predictor.train_model()
+            risk_predictor.train_model(supabase_manager)
             risk_areas = risk_predictor.predict_risk_areas(lat, lng, disease)
             return jsonify(risk_areas)
         except Exception as e:

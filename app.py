@@ -79,13 +79,29 @@ def create_app():
         from datetime import datetime
         
         if isinstance(entry, dict):
-            # Supabase dictionary format
+            # Supabase dictionary format - map all fields template might need
+            created_at = datetime.now()
+            if entry.get('created_at'):
+                try:
+                    created_at = datetime.fromisoformat(entry['created_at'].replace('Z', '+00:00'))
+                except:
+                    created_at = datetime.now()
+            
+            # Handle patient age from different field names
+            patient_age = entry.get('patient_age', entry.get('age', 0))
+            
             return type('Entry', (), {
                 'disease_name': entry.get('disease_type', entry.get('disease_name', 'unknown')),
-                'created_at': datetime.fromisoformat(entry['created_at'].replace('Z', '+00:00')) if entry.get('created_at') else datetime.now(),
+                'created_at': created_at,
+                'occurrence_date': created_at,  # Alias for created_at
                 'address': entry.get('address', 'Unknown location'),
-                'patient_age': entry.get('patient_age', 0),
-                'id': entry.get('id', 0)
+                'patient_age': patient_age,
+                'id': entry.get('id', 0),
+                'additional_info': entry.get('additional_info', entry.get('notes', '')),
+                'risk_index': entry.get('risk_index', 0.5),  # Default risk
+                'severity': entry.get('severity', 'medium'),
+                'latitude': entry.get('latitude', 0),
+                'longitude': entry.get('longitude', 0)
             })()
         else:
             # Already an object (SQLAlchemy model)
@@ -202,9 +218,10 @@ def create_app():
             # Try to get from Supabase first
             if supabase_manager:
                 try:
-                    entries = supabase_manager.get_disease_entries(limit=1000)
-                    entry = next((e for e in entries if e.get('id') == entry_id), None)
-                    print(f"Found entry from Supabase: {entry is not None}")
+                    entry = supabase_manager.get_disease_entry_by_id(entry_id)
+                    logger.info(f"Searching for entry_id: {entry_id}, Found entry: {entry is not None}")
+                    if entry:
+                        logger.debug(f"Entry data: {entry}")
                 except Exception as e:
                     logger.warning(f"Failed to get entry from Supabase: {e}")
             
@@ -216,18 +233,22 @@ def create_app():
                     logger.warning(f"Failed to get entry from local DB: {e}")
             
             if not entry:
+                logger.warning(f"Disease entry with ID {entry_id} not found")
                 flash('Disease entry not found.', 'error')
                 return redirect(url_for('index'))
+            
+            # Normalize entry for template compatibility
+            normalized_entry = normalize_entry_for_template(entry)
             
             # Train/update the model with latest data
             risk_predictor.train_model(supabase_manager)
             
-            # Generate risk predictions
-            if hasattr(entry, 'latitude'):
-                # SQLAlchemy object
-                lat, lng, disease = entry.latitude, entry.longitude, entry.disease_name
+            # Generate risk predictions - use normalized entry to avoid attribute errors
+            if hasattr(normalized_entry, 'latitude'):
+                # SQLAlchemy object or normalized entry
+                lat, lng, disease = normalized_entry.latitude, normalized_entry.longitude, normalized_entry.disease_name
             else:
-                # Dictionary from Supabase
+                # Fallback to dictionary access
                 lat, lng = entry['latitude'], entry['longitude']
                 disease = entry.get('disease_type', entry.get('disease_name', 'Unknown'))
             
@@ -237,7 +258,7 @@ def create_app():
             risk_map = create_risk_map(lat, lng, risk_areas)
             
             return render_template('risk_prediction.html', 
-                                 entry=entry, 
+                                 entry=normalized_entry, 
                                  risk_areas=risk_areas,
                                  risk_map=risk_map)
         except Exception as e:
@@ -379,13 +400,25 @@ def create_app():
             
             # Add risk area circles
             for area in risk_areas:
-                risk_level = area.get('risk_level', 0)
+                # Use risk_score (float) instead of risk_level (string)
+                risk_score = area.get('risk_score', area.get('risk_level', 0))
                 
-                # Color based on risk level
-                if risk_level > 0.7:
+                # Ensure risk_score is a float
+                if isinstance(risk_score, str):
+                    # Convert string risk levels to numeric values
+                    risk_level_map = {
+                        'Very High': 0.9,
+                        'High': 0.7,
+                        'Medium': 0.5,
+                        'Low': 0.3
+                    }
+                    risk_score = risk_level_map.get(risk_score, 0.5)
+                
+                # Color based on risk score
+                if risk_score > 0.7:
                     color = 'red'
                     fillColor = 'red'
-                elif risk_level > 0.4:
+                elif risk_score > 0.4:
                     color = 'orange'
                     fillColor = 'orange'
                 else:
@@ -395,7 +428,7 @@ def create_app():
                 folium.Circle(
                     location=[area['lat'], area['lng']],
                     radius=area.get('radius', 1000),
-                    popup=f"Risk Level: {risk_level:.2f}",
+                    popup=f"Risk Level: {float(risk_score):.2f}",
                     color=color,
                     fillColor=fillColor,
                     fillOpacity=0.3,

@@ -75,13 +75,42 @@ class SupabaseManager:
             logger.error(f"Failed to get disease entries: {e}")
             return []
     
+    def get_disease_entry_by_id(self, entry_id: int) -> Optional[Dict[str, Any]]:
+        """Get a single disease entry by ID"""
+        try:
+            response = (self.client.table('disease_entries')
+                       .select('*')
+                       .eq('id', entry_id)
+                       .execute())
+            
+            if response.data and len(response.data) > 0:
+                return response.data[0]
+            return None
+        except Exception as e:
+            logger.error(f"Failed to get disease entry by ID {entry_id}: {e}")
+            return None
+    
     def get_entries_for_ml(self) -> list:
         """Get disease entries formatted for ML model"""
         try:
             response = (self.client.table('disease_entries')
-                       .select('latitude,longitude,disease_type,severity,created_at')
+                       .select('latitude,longitude,disease_type,severity,created_at,age')
                        .execute())
-            return response.data
+            
+            # Transform the data to match ML model expectations
+            entries = []
+            for entry in response.data:
+                ml_entry = {
+                    'latitude': entry.get('latitude', 0),
+                    'longitude': entry.get('longitude', 0),
+                    'disease_type': entry.get('disease_type', 'unknown'),
+                    'severity': entry.get('severity', 3),
+                    'patient_age': entry.get('age', 0),  # Map 'age' to 'patient_age'
+                    'occurrence_date': entry.get('created_at', datetime.now().isoformat())  # Map 'created_at' to 'occurrence_date'
+                }
+                entries.append(ml_entry)
+            
+            return entries
         except Exception as e:
             logger.error(f"Failed to get ML data: {e}")
             return []

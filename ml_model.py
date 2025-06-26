@@ -42,7 +42,7 @@ class DiseaseRiskPredictor:
         df = data.copy()
         
         # Extract temporal features
-        df['occurrence_date'] = pd.to_datetime(df['occurrence_date'])
+        df['occurrence_date'] = pd.to_datetime(df['occurrence_date'], format='mixed', errors='coerce')
         df['month'] = df['occurrence_date'].dt.month
         df['day_of_year'] = df['occurrence_date'].dt.dayofyear
         
@@ -147,18 +147,20 @@ class DiseaseRiskPredictor:
                     data.append({
                         'latitude': entry.get('latitude'),
                         'longitude': entry.get('longitude'),
-                        'disease_type': entry.get('disease_type', entry.get('disease_name', 'unknown')),
+                        'disease_name': entry.get('disease_type', entry.get('disease_name', 'unknown')),  # Normalize to disease_name
+                        'patient_age': entry.get('patient_age', entry.get('age', 0)),  # Handle age field variations
                         'severity': entry.get('severity', 'medium'),
-                        'created_at': entry.get('created_at')
+                        'occurrence_date': entry.get('occurrence_date', entry.get('created_at'))
                     })
                 else:
                     # SQLAlchemy object format
                     data.append({
                         'latitude': entry.latitude,
                         'longitude': entry.longitude,
-                        'disease_type': entry.disease_name,
+                        'disease_name': entry.disease_name,  # Keep as disease_name for consistency
+                        'patient_age': getattr(entry, 'patient_age', 0),
                         'severity': getattr(entry, 'severity', 'medium'),
-                        'created_at': entry.occurrence_date
+                        'occurrence_date': entry.created_at
                     })
             
             df = pd.DataFrame(data)
@@ -231,7 +233,7 @@ class DiseaseRiskPredictor:
                     'latitude': [zone_lat],
                     'longitude': [zone_lng],
                     'patient_age': [35],  # Average age
-                    'disease_name': [disease_name],
+                    'disease_name': [disease_name],  # ML model expects disease_name
                     'occurrence_date': [datetime.now()]
                 })
                 

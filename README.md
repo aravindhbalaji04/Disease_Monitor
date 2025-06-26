@@ -215,14 +215,146 @@ The system includes sample data generation with:
 - **Weather Integration**: Include meteorological data in predictions
 - **Population Data**: Real population density data integration
 
-## 🙏 Acknowledgments
+## 🚀 Deployment & Hosting
 
-- **scikit-learn**: For machine learning algorithms
-- **Folium**: For interactive mapping capabilities
-- **Bootstrap**: For responsive UI components
-- **OpenStreetMap**: For map data
-- **Nominatim**: For geocoding services
+### Quick Deployment Options
 
----
+#### 1. Railway (Recommended - Easy & Free)
+1. **Sign up**: Go to [railway.app](https://railway.app)
+2. **Deploy from GitHub**: 
+   - Connect your GitHub repository
+   - Railway will auto-detect Python and use the `Procfile`
+3. **Set Environment Variables**: Add your Supabase credentials
+4. **Deploy**: Automatic deployment on every git push
 
-**Built for public health safety and disease control management.**
+#### 2. Render (Free Tier Available)
+1. **Sign up**: Go to [render.com](https://render.com)
+2. **Create Web Service**: Connect your GitHub repository
+3. **Configuration**:
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `gunicorn app:app`
+4. **Environment Variables**: Add Supabase credentials
+
+#### 3. Heroku (Popular Choice)
+```bash
+# Install Heroku CLI and login
+heroku login
+
+# Create app
+heroku create your-disease-portal
+
+# Set environment variables
+heroku config:set SUPABASE_URL=your-supabase-url
+heroku config:set SUPABASE_ANON_KEY=your-anon-key
+
+# Deploy
+git push heroku main
+```
+
+#### 4. DigitalOcean App Platform
+1. **Create App**: Connect GitHub repository
+2. **Runtime**: Python
+3. **Commands**:
+   - Build: `pip install -r requirements.txt`
+   - Run: `gunicorn app:app`
+
+### 🗄️ Supabase Integration
+
+#### Step 1: Create Supabase Project
+1. Go to [supabase.com](https://supabase.com) and create a new project
+2. Note your project URL and API keys from Settings > API
+3. Get database connection string from Settings > Database
+
+#### Step 2: Environment Configuration
+Create `.env` file with your credentials:
+```bash
+# Copy example file
+cp .env.example .env
+
+# Edit with your Supabase details
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_DATABASE_URL=postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres
+```
+
+#### Step 3: Database Setup
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Setup database schema
+python setup_database.py
+
+# Optional: Add sample data
+python setup_database.py --sample-data
+```
+
+#### Step 4: Test Integration
+```bash
+# Run locally
+python app.py
+
+# Test health endpoint
+curl http://localhost:5000/health
+```
+
+### 🔧 Production Configuration
+
+#### Environment Variables for Production:
+```env
+FLASK_ENV=production
+FLASK_DEBUG=False
+SECRET_KEY=strong-random-secret-key
+SUPABASE_URL=your-supabase-url
+SUPABASE_ANON_KEY=your-anon-key
+PORT=5000
+```
+
+#### Security Best Practices:
+- Use strong SECRET_KEY in production
+- Enable HTTPS (handled by hosting platforms)
+- Set FLASK_DEBUG=False
+- Use environment variables for all secrets
+- Enable Supabase Row Level Security (RLS)
+
+### 📊 Monitoring & Health Checks
+
+The application includes built-in health monitoring:
+- **Health Endpoint**: `/health` - Check application and database status
+- **API Status**: `/api/entries` - Test API functionality
+- **Database Status**: Automatic Supabase connection testing
+
+### 🔍 Troubleshooting Deployment
+
+#### Common Issues:
+1. **Build Failures**: Check `requirements.txt` for correct package versions
+2. **Database Connection**: Verify Supabase credentials and IP whitelist
+3. **Memory Issues**: Upgrade to higher tier if needed
+4. **Slow Geocoding**: Consider adding geocoding API key
+
+#### Debug Commands:
+```bash
+# Check logs (Railway)
+railway logs
+
+# Check logs (Heroku)
+heroku logs --tail
+
+# Test database connection
+python -c "from supabase_config import get_supabase_manager; print(get_supabase_manager().test_connection())"
+```
+
+### 📈 Scaling Considerations
+
+#### For High Traffic:
+1. **Database**: Enable connection pooling in Supabase
+2. **Caching**: Add Redis for frequently accessed data
+3. **Load Balancing**: Use multiple instances
+4. **CDN**: Serve static assets via CDN
+5. **Rate Limiting**: Implement API rate limiting
+
+#### Performance Optimization:
+- Enable gzip compression
+- Use database indexes (already configured)
+- Implement caching for ML predictions
+- Optimize map rendering

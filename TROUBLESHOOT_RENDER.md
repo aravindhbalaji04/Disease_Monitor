@@ -1,6 +1,29 @@
 # 🔧 Render Deployment Troubleshooting
 
-## Issue: ModuleNotFoundError: No module named 'your_application'
+## Issue: Modul### **Common Render Deployment Issues**:
+
+1. **Wrong Start Command** ← **(FIXED!)**
+2. **Dependency Compatibility Issues** ← **(YOU MIGHT BE HERE)**
+3. **Missing Environment Variables**
+4. **Build Command Issues**
+5. **Port Binding Problems**
+6. **Database Connection Failures**
+
+## Issue: ImportError: cannot import name 'url_encode' from 'werkzeug.urls'
+
+### **Problem**: 
+Flask-WTF version incompatibility with newer Werkzeug versions.
+
+### **Root Cause**: 
+Flask-WTF 1.1.1 expects older Werkzeug API, but Python 3.13 installs latest Werkzeug.
+
+### **Solution**: 
+Updated requirements.txt with compatible versions:
+```
+flask-wtf==1.2.1
+wtforms==3.1.1  
+werkzeug==2.3.7
+```ndError: No module named 'your_application'
 
 ### **Problem**: 
 Render is using the wrong start command `gunicorn your_application.wsgi` instead of `gunicorn app:app`.
